@@ -1,0 +1,91 @@
+<html>
+  <head>
+<meta charset="utf-8">
+    	<!-- Syntax coloration -->
+	    <link rel="stylesheet" type="text/css" href="prism.css" />
+	    <!-- This page style -->
+	    <link rel="stylesheet" type="text/css" href="style.css" /> 
+	    <!-- Flight Indicators library styles -->
+	    <link rel="stylesheet" type="text/css" href="flightindicators.css" />  
+ <title>MJPG-Streamer - Stream Example</title>
+  </head>
+  <body>
+    <div id="streaming" width="500" height="500" style="position:fixed;">
+      <img style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; margin: 0 0 0 0; padding: 0 0 0 0; height: 100vh; width: 100vw;" src="/?action=stream"/>
+    </div>
+ <div id="instruments" width="500" height="500" style="position:fixed; z-index:3;">
+	            <span id="attitude"></span>     
+	            <span id="heading"></span>
+ </div>
+
+ <div id="yprData" style="left:50vw; top:50vh; position:fixed; z-index:100; color:red;"> </div>
+ <div id="sensor" style="left:35vw; top:13vh; position:fixed; z-index:101; color:red; font-size:1.75em;"> </div>
+		<!-- Importing jQuery library -->
+		<script src="jquery.min.js"></script>
+
+		<!-- Importing the FlightIndicators library -->
+		<script src="jquery.flightindicators.js"></script>
+
+		<!-- Let start our scripts -->
+		<script type="text/javascript">
+			var ypr = "";			
+
+			// Dynamic examples
+			var attitude = $.flightIndicator('#attitude', 'attitude', {roll:0, pitch:0, size:200, showBox: false});
+			var heading = $.flightIndicator('#heading', 'heading', {heading:0, showBox: false});
+			
+			var indicatorCanvas = document.getElementById("instruments");
+			//Update at 20Hz
+			
+			var indexEq, indexY, indexP, indexR, yaw, pitch, roll, output, indexT, indexPress, indexD, temp, press, depth;
+
+			var sensor = "";			
+
+			var increment = 0;
+			setInterval(function() {
+			    // Attitude update
+			    //attitude.setRoll(30*Math.sin(increment/10));
+			    //attitude.setPitch(50*Math.sin(increment/20));
+			    // Heading update
+			    //heading.setHeading(increment);
+
+			    $.get('http://192.168.0.10:3000/', function(data){
+				var check = isNaN(data.substring(data.length - 1, data.length));
+
+				if(data.length > 18 && data.length < 31 && data.substring(0,4) === "#YPR" && !check) {
+					indexEq = data.indexOf("=");
+					indexY = data.indexOf("|");
+					indexP = data.indexOf("|", indexY + 1);
+					indexR = data.indexOf("|", indexP + 1);
+					yaw = data.substring(indexEq + 1, indexY);
+					pitch = data.substring(indexY + 1, indexP);
+					roll = data.substring(indexP + 1, indexR);
+					//$("#yprData").html("Yaw: " + yaw + ", Pitch: " + pitch + ", Roll: " + roll);
+					attitude.setRoll(pitch);
+					attitude.setPitch(roll);
+					heading.setHeading(yaw);
+					//console.log(data);
+				}
+                            }); 
+			    
+			    /* $.get('http://192.168.0.10:3000/depth', function(data) {
+				var check = (data.substring(data.length -1, data.length) === ">");
+				
+				if(data.length >= 5  && data.length <= 15 && data.substring(0,1) === "<" && check) {
+					indexT = data.indexOf("|");
+					indexD = data.indexOf(">", indexT + 1);
+					temp = data.substring(1, indexT);
+					depth = data.substring(indexT + 1, indexD);
+					temp = temp/10.0;
+					depth = depth/10.0;
+					output = "Temp: " + temp + " C, Depth " + depth + " cm";
+					$("#sensor").html(output);
+					console.log(output);
+				} 
+			    }); */
+
+			    increment++;
+			}, 50);
+		</script>
+  </body>
+</html>
